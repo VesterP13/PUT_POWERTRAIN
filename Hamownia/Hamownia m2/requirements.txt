@@ -1,0 +1,6 @@
+customtkinter==5.2.1
+pandas==2.0.1
+DateTime==5.4
+numpy==1.23.5
+matplotlib==3.6.2
+

@@ -1,19 +1,37 @@
 import customtkinter
-import connection
 import threading
+import time
+from tkinter import messagebox
+import connection
+import settings
 
-#MOTYW
-app_text_font = ("Helvetica", 14)
-app_text_color = "white"
+windows = []
+
+save_window_status = False
+
+#POBRANE USTAWIENIA
+app_text_font = settings.app_text_font
+app_text_color = settings.app_text_color
+log_box_measuring_timeout = settings.log_box_measuring_timeout
 
 #GŁÓWNE OKNO APLIKACJI
 main_app_window = customtkinter.CTk()
 main_app_window.geometry("1024x600")
 main_app_window.title("PUT POWERTRAIN DYNAMOMETER")
+main_app_window.resizable(False, False)
 
-def display_update():
+#WYŚWIETLANIE
+def display_measurment():
     while True:
-        log_box_show_message()
+        try:
+            log_box_show_message("Rpm1:"+connection.rpm_1_list[-1]+" Rpm2:"+connection.rpm_2_list[-1]+" Rpm3:"+connection.rpm_3_list[-1]+" Rpm4:"+connection.rpm_4_list[-1]+" Temp. Amb:"+connection.temp_ambient_list[-1]+" Temp. Bat"+connection.temp_baterry_list[-1]+" Curr:"+connection.current_list[-1]+" Volt:"+connection.voltage_list[-1]+" Time:"+connection.time_list[-1])
+            global log_box_measuring_timeout
+            time.sleep(log_box_measuring_timeout)
+        except:
+            pass
+        global is_measuring_running
+        if not is_measuring_running:
+            break
 
 #FUNKCJE PRZYCISKÓW
 def command_start():
@@ -21,19 +39,32 @@ def command_start():
     if button_wifi_ardumeasure.cget("fg_color") == "red":
         button_startstop.configure(text="Stop", command=command_stop, fg_color='red')
         connection.start_measurement()
+        global is_measuring_running
+        is_measuring_running = True
+        display_measurment_thread = threading.Thread(target=display_measurment, daemon=True)
+        display_measurment_thread.start()
     else:
         log_box_show_message("Napierw połącz się ze systemem pomiarowym.")
 
 def command_stop():
     button_startstop.configure(text="Start", command=command_start, fg_color='green')
     connection.stop_measurment()
+    global is_measuring_running
+    is_measuring_running = False
 
 def command_reset():
-    log_box_show_message("Rpm1:"+connection.rpm_1_list[-1]+" Rpm2:"+connection.rpm_2_list[-1]+" Rpm3:"+connection.rpm_3_list[-1]+" Rpm4"+connection.rpm_4_list[-1])
-    pass
+    if not connection.rpm_1_list:
+        log_box_show_message("Nie ma żadnych danych do zresetowania.")
+    else:
+        connection.reset_data()
+        log_box_show_message("Dane zresetowane.")
 
 def command_save():
-    pass
+    command_stop()
+    if connection.rpm_1_list:
+        create_question_save_format()
+    else:
+        log_box_show_message("Nie ma żadnych danych do zapisania.")
 
 def command_start_remote_control():
     if button_wifi_arducontrol.cget("fg_color") == "red":
@@ -63,7 +94,7 @@ def command_connect_arduino_control():
         is_arduino_control_connected(True)
         log_box_show_message("Połączono ze sterowaniem.")
     else:
-        log_box_show_message("Nie udało się połączyć z sterowaniem.")
+        log_box_show_message("Nie udało się połączyć ze sterowaniem.")
 
 def is_arduino_control_connected(status):
     if status == True:
@@ -91,14 +122,13 @@ def is_arduino_measure_connected(status):
     if status == True:
         button_wifi_ardumeasure.configure(text="Rozłącz system pom.", fg_color='red', command = command_disconnect_arduino_measure)
     else:
-        button_wifi_ardumeasure.configure(text="Połącz ze systemem pomiarowym", fg_color='green', command = command_connect_arduino_measure)
+        button_wifi_ardumeasure.configure(text="Połącz z systemem pom.", fg_color='green', command = command_connect_arduino_measure)
 
 def command_disconnect_arduino_measure():
     global socket_arduino_measure
     connection.disconnect_measure_arduino_by_wifi()
     is_arduino_measure_connected(False)
     log_box_show_message("Rozłączono ze systemem pomiarowym.")
-
 
 #STEROWANIE
 def motor1_control(value):
@@ -180,6 +210,12 @@ button_wifi_ardumeasure.place(relx=0.1, rely=0.08, anchor="center")
 button_remote_control=customtkinter.CTkButton(master = main_app_window, width=200, height=50, command=command_start_remote_control, text = "Włącz zdalne sterowanie", fg_color='green', text_color=app_text_color, font=app_text_font)
 button_remote_control.place(relx=0.1, rely=0.15, anchor="center")
 
+def command_clear_log_box():
+    log_box.delete("1.0", customtkinter.END)
+
+button_clear_log_box=customtkinter.CTkButton(master = main_app_window, width=100, height=25, command=command_clear_log_box, text = "Czyść logi", text_color=app_text_color, font=app_text_font)
+button_clear_log_box.place(relx=0.92, rely=0.78, anchor="center")
+
 #POLE TEKSTOWE
 def log_box_show_message(message):
     log_box.insert("end", message + "\n")
@@ -188,4 +224,66 @@ def log_box_show_message(message):
 log_box = customtkinter.CTkTextbox(master = main_app_window, width=800, height=100, text_color=app_text_color, font=app_text_font)
 log_box.place(relx=0.6, rely=0.9, anchor="center")
 
+#OKNO WYBORU ZAPISU
+def create_question_save_format():
+    global save_window
+    global save_window_status
+    if save_window_status == True:
+        save_window.focus_force()
+        return
+    save_window_status = True
+    def save_data_to_excel():
+        connection.save_data_to_excel()
+        on_closing_save_window()
+
+    def save_data_to_txt():
+        connection.save_data_to_txt()
+        on_closing_save_window()
+
+
+    save_window =  customtkinter.CTk()
+    save_window.geometry("300x150")
+    save_window.title("Zapisywanie")
+    save_window.resizable(False, False)
+    global windows
+    windows.append(save_window)
+
+    main_question = customtkinter.CTkLabel(master=save_window, text="Wybierz format zapisu:")
+    main_question.place(relx=0.5, rely=0.2, anchor=customtkinter.CENTER)
+    main_question.configure(font=app_text_font, text_color=app_text_color)
+
+    button_excel = customtkinter.CTkButton(master=save_window, text="Excel", command=save_data_to_excel)
+    button_excel.place(relx=0.25, rely=0.8, anchor=customtkinter.CENTER)
+
+    button_txt = customtkinter.CTkButton(master=save_window, text="Tekstowy", command=save_data_to_txt)
+    button_txt.place(relx=0.75, rely=0.8, anchor=customtkinter.CENTER)
+
+    save_window.bind("<Escape>", lambda event: save_window.destroy())
+
+    def on_closing_save_window():
+        global save_window_status
+        save_window_status = False
+        save_window.destroy()
+
+    save_window.protocol("WM_DELETE_WINDOW", on_closing_save_window)
+    save_window.mainloop()
+
+#ZAMYKANIE
+def on_closing():
+    if connection.rpm_1_list:
+        if messagebox.askokcancel("Wyjście", "Czy na pewno chcesz wyjść?\n Wszystkie niezapisane dane zostaną utracone."):
+            global windows
+            for window in windows:
+                try:
+                    window.destroy()
+                except:
+                    pass
+
+            main_app_window.destroy()
+    main_app_window.destroy()
+
+print(button_reset.cget('fg_color'))
+    
+main_app_window.protocol("WM_DELETE_WINDOW", on_closing)
 main_app_window.mainloop()
+

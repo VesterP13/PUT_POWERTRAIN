@@ -1,14 +1,14 @@
+import settings
 import socket
 import threading
-import queue
+import pandas as pd
+import datetime
+import os
 
-lock = threading.Lock()
-
-TCP_CONTROL_IP=""
-TCP_CONTROL_PORT=12345
-
-TCP_MEASURE_IP="192.168.1.3"
-TCP_MEASURE_PORT=12345
+TCP_CONTROL_IP=settings.TCP_CONTROL_IP
+TCP_CONTROL_PORT=settings.TCP_CONTROL_PORT
+TCP_MEASURE_IP=settings.TCP_MEASURE_IP
+TCP_MEASURE_PORT=settings.TCP_MEASURE_PORT
 
 rpm_1_list = []
 rpm_2_list = []
@@ -19,8 +19,10 @@ temp_baterry_list = []
 current_list = []
 voltage_list = []
 arduino_data_list = []
-
+time_list = []
 measurement_running = False
+
+#ŁĄCZENIE
 
 def connect_control_arduino_by_wifi():
     global TCP_CONTROL_IP
@@ -59,7 +61,7 @@ def disconnect_measure_arduino_by_wifi():
     print("Disconnecting from arduino by WiFi")
 
 #ZDALNE STEROWANIE
-
+    
 def motor1_control(value):
     global sock_arduino_control
     message = "1" + str(value) + "#"
@@ -132,12 +134,75 @@ def measurement():
 def measuring_data_handling(received_message):
     received_message = received_message[1:-1]
     arduino_data_list = received_message.split(";")
-    rpm_1_list.append(arduino_data_list[0])
+    
+    # Check that arduino_data_list has 8 elements
+    if len(arduino_data_list) != 8:
+        print("Error: arduino_data_list should have 8 elements")
+        return
+
+    rpm_1_list.append(arduino_data_list[0]) 
     rpm_2_list.append(arduino_data_list[1])
-    rpm_3_list.append(arduino_data_list[2]) 
+    rpm_3_list.append(arduino_data_list[2])
     rpm_4_list.append(arduino_data_list[3])
     temp_ambient_list.append(arduino_data_list[4])
     temp_baterry_list.append(arduino_data_list[5])
     current_list.append(arduino_data_list[6])
     voltage_list.append(arduino_data_list[7])
+    time_now = datetime.datetime.now().strftime("%H:%M:%S:%f")[:-3]
+    time_list.append(time_now)
     arduino_data_list.clear()
+
+#RESET
+def reset_data():
+    rpm_1_list.clear()
+    rpm_2_list.clear()
+    rpm_3_list.clear()
+    rpm_4_list.clear()
+    temp_ambient_list.clear()
+    temp_baterry_list.clear()
+    current_list.clear()
+    voltage_list.clear()
+    time_list.clear()
+
+#ZAPIS 
+def strings_to_floats(string_list):
+
+  for i in range(len(string_list)):
+    try:
+      string_list[i] = float(string_list[i])
+    except ValueError:
+      string_list[i] = 0
+      
+  return string_list
+
+def save_data_to_excel():
+    df = pd.DataFrame({
+    'czas': time_list[:min(len(time_list), len(rpm_1_list), len(rpm_2_list), len(rpm_3_list), len(rpm_4_list), len(temp_ambient_list), len(temp_baterry_list), len(current_list), len(voltage_list))],
+    'rpm1_silnik1': strings_to_floats(rpm_1_list[:min(len(time_list), len(rpm_1_list), len(rpm_2_list), len(rpm_3_list), len(rpm_4_list), len(temp_ambient_list), len(temp_baterry_list), len(current_list), len(voltage_list))]),
+    'rpm_silnik2': strings_to_floats(rpm_2_list[:min(len(time_list), len(rpm_1_list), len(rpm_2_list), len(rpm_3_list), len(rpm_4_list), len(temp_ambient_list), len(temp_baterry_list), len(current_list), len(voltage_list))]),
+    'rpm_silnik3': strings_to_floats(rpm_3_list[:min(len(time_list), len(rpm_1_list), len(rpm_2_list), len(rpm_3_list), len(rpm_4_list), len(temp_ambient_list), len(temp_baterry_list), len(current_list), len(voltage_list))]), 
+    'rpm_silnik4': strings_to_floats(rpm_4_list[:min(len(time_list), len(rpm_1_list), len(rpm_2_list), len(rpm_3_list), len(rpm_4_list), len(temp_ambient_list), len(temp_baterry_list), len(current_list), len(voltage_list))]),
+    'temp. otoczenia': strings_to_floats(temp_ambient_list[:min(len(time_list), len(rpm_1_list), len(rpm_2_list), len(rpm_3_list), len(rpm_4_list), len(temp_ambient_list), len(temp_baterry_list), len(current_list), len(voltage_list))]),
+    'temp. baterii': strings_to_floats(temp_baterry_list[:min(len(time_list), len(rpm_1_list), len(rpm_2_list), len(rpm_3_list), len(rpm_4_list), len(temp_ambient_list), len(temp_baterry_list), len(current_list), len(voltage_list))]),
+    'prąd': strings_to_floats(current_list[:min(len(time_list), len(rpm_1_list), len(rpm_2_list), len(rpm_3_list), len(rpm_4_list), len(temp_ambient_list), len(temp_baterry_list), len(current_list), len(voltage_list))]),
+    'napięcie': strings_to_floats(voltage_list[:min(len(time_list), len(rpm_1_list), len(rpm_2_list), len(rpm_3_list), len(rpm_4_list), len(temp_ambient_list), len(temp_baterry_list), len(current_list), len(voltage_list))])
+    })
+    aktualna_data = datetime.datetime.now().strftime("%Y_%m_%d") 
+    nazwa_pliku = f"{aktualna_data}.xlsx"
+    numer_cyfry = 1
+    while os.path.exists(nazwa_pliku):
+        numer_cyfry += 1
+        nazwa_pliku = f"{aktualna_data}_{numer_cyfry}.xlsx"
+    df.to_excel(nazwa_pliku, index=False) 
+
+def save_data_to_txt():
+    aktualna_data = datetime.datetime.now().strftime("%Y_%m_%d")
+    nazwa_pliku = f"{aktualna_data}.txt"
+    numer_cyfry = 1
+    while os.path.exists(nazwa_pliku):
+        numer_cyfry += 1
+        nazwa_pliku = f"{aktualna_data}_{numer_cyfry}.txt"
+    with open(nazwa_pliku, "w") as f:
+        f.write("czas;rpm1_silnik1;rpm_silnik2;rpm_silnik3;rpm_silnik4;temp. otoczenia;temp. baterii;prąd;napięcie\n")
+        for i in range(min(len(time_list), len(rpm_1_list), len(rpm_2_list), len(rpm_3_list), len(rpm_4_list), len(temp_ambient_list), len(temp_baterry_list))):
+            f.write(f"{time_list[i]};{rpm_1_list[i]};{rpm_2_list[i]};{rpm_3_list[i]};{rpm_4_list[i]};{temp_ambient_list[i]};{temp_baterry_list[i]};{current_list[i]};{voltage_list[i]}\n")
