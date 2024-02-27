@@ -1,6 +1,6 @@
 #USTAWIENIA MOTYWU
 
-app_text_font = ("Helvetica", 13)
+app_text_font = ("Helvetica", 12)
 
 app_text_color = "white"
 

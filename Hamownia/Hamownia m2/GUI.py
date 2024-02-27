@@ -6,8 +6,9 @@ import connection
 import settings
 
 windows = []
-
+button_list = []
 save_window_status = False
+
 
 #POBRANE USTAWIENIA
 app_text_font = settings.app_text_font
@@ -19,6 +20,8 @@ main_app_window = customtkinter.CTk()
 main_app_window.geometry("1024x600")
 main_app_window.title("PUT POWERTRAIN DYNAMOMETER")
 main_app_window.resizable(False, False)
+#main_app_window.overrideredirect(True)
+#main_app_window.focus_force()
 
 #WYŚWIETLANIE
 def display_measurment():
@@ -33,11 +36,36 @@ def display_measurment():
         if not is_measuring_running:
             break
 
+def time_counting():
+    global start
+    while True:
+        # Wykonaj jakieś zadanie tutaj
+        time.sleep(0.01)  # Poczekaj przez 1 sekundę
+        # Oblicz upływający czas
+        elapsed_time = time.perf_counter() - start
+        # Aktualizuj time_counter
+        time_counter.delete("0", "end")
+        time_counter.insert("1", f"{elapsed_time:.2f} s")
+        time_counter.update()  # Zaktualizuj widok
+        if not is_measuring_running:
+            break
+
+def time_counting_reset():
+    time_counter.delete("0", customtkinter.END)
+    time_counter.insert("1", "00.00 s")
+    global start
+    start = time.perf_counter()
+
 #FUNKCJE PRZYCISKÓW
 def command_start():
     global button_wifi_ardumeasure
-    if button_wifi_ardumeasure.cget("fg_color") == "red":
-        button_startstop.configure(text="Stop", command=command_stop, fg_color='red')
+    if button_wifi_ardumeasure.cget("border_color") == "red":
+        time_counting_thread = threading.Thread(target=time_counting, daemon=True)
+        if not connection.rpm_1_list:
+            global start
+            start = time.perf_counter()  # Rozpocznij pomiar czasu
+        time_counting_thread.start()
+        button_startstop.configure(text="Stop", command=command_stop, border_color='red')
         connection.start_measurement()
         global is_measuring_running
         is_measuring_running = True
@@ -47,7 +75,7 @@ def command_start():
         log_box_show_message("Napierw połącz się ze systemem pomiarowym.")
 
 def command_stop():
-    button_startstop.configure(text="Start", command=command_start, fg_color='green')
+    button_startstop.configure(text="Start", command=command_start, border_color='green')
     connection.stop_measurment()
     global is_measuring_running
     is_measuring_running = False
@@ -57,6 +85,7 @@ def command_reset():
         log_box_show_message("Nie ma żadnych danych do zresetowania.")
     else:
         connection.reset_data()
+        time_counting_reset()
         log_box_show_message("Dane zresetowane.")
 
 def command_save():
@@ -67,7 +96,7 @@ def command_save():
         log_box_show_message("Nie ma żadnych danych do zapisania.")
 
 def command_start_remote_control():
-    if button_wifi_arducontrol.cget("fg_color") == "red":
+    if button_wifi_arducontrol.cget("border_color") == "red":
         button_remote_control.configure(text="Wyłącz zdalne sterowanie", command=command_stop_remote_control, fg_color='red')
         slider1.configure(command = motor1_control)
         slider2.configure(command = motor2_control)
@@ -79,7 +108,7 @@ def command_start_remote_control():
         log_box_show_message("Napierw połącz się ze sterowaniem.")
 
 def command_stop_remote_control():
-    button_remote_control.configure(text="Włącz zdalne sterowanie", command=command_start_remote_control, fg_color='green')
+    button_remote_control.configure(text="Włącz zdalne sterowanie", command=command_start_remote_control, border_color='green')
     slider1.configure(command = None)
     slider2.configure(command = None)
     slider3.configure(command = None)
@@ -98,9 +127,9 @@ def command_connect_arduino_control():
 
 def is_arduino_control_connected(status):
     if status == True:
-        button_wifi_arducontrol.configure(text="Rozłącz sterowanie", fg_color='red', command = command_disconnect_arduino_control)
+        button_wifi_arducontrol.configure(text="Rozłącz sterowanie", border_color="red", command = command_disconnect_arduino_control)
     else:
-        button_wifi_arducontrol.configure(text="Połącz ze sterowaniem", fg_color='green', command = command_connect_arduino_control)
+        button_wifi_arducontrol.configure(text="Połącz ze sterowaniem", border_color="green", command = command_connect_arduino_control)
 
 def command_disconnect_arduino_control():
     global socket_arduino_control
@@ -120,9 +149,9 @@ def command_connect_arduino_measure():
 
 def is_arduino_measure_connected(status):
     if status == True:
-        button_wifi_ardumeasure.configure(text="Rozłącz system pom.", fg_color='red', command = command_disconnect_arduino_measure)
+        button_wifi_ardumeasure.configure(text="Rozłącz system pom.", border_color="red", command = command_disconnect_arduino_measure)
     else:
-        button_wifi_ardumeasure.configure(text="Połącz z systemem pom.", fg_color='green', command = command_connect_arduino_measure)
+        button_wifi_ardumeasure.configure(text="Połącz z systemem pom.", border_color="green", command = command_connect_arduino_measure)
 
 def command_disconnect_arduino_measure():
     global socket_arduino_measure
@@ -162,66 +191,92 @@ def all_sliders_change(value):
     slider3.set(value)
     slider4.set(value)
 
-slider1=customtkinter.CTkSlider(master = main_app_window, width=160, height=20, from_=1000, to=2000)
+slider1=customtkinter.CTkSlider(master = main_app_window, width=160, height=20, from_=1000, to=2000, fg_color="gray30", button_color="gray1", progress_color="green")
 slider1.place(relx=0.12, rely=0.25, anchor="center")
 slider1_label=customtkinter.CTkLabel(master = main_app_window, text = "m1",font=app_text_font, text_color=app_text_color)
 slider1_label.place(relx=0.02, rely=0.25, anchor="center")
 slider1.set(1000)
 
-slider2=customtkinter.CTkSlider(master = main_app_window, width=160, height=20, from_=1000, to=2000)
+slider2=customtkinter.CTkSlider(master = main_app_window, width=160, height=20, from_=1000, to=2000, fg_color="gray30", button_color="gray1", progress_color="green")
 slider2.place(relx=0.12, rely=0.35, anchor="center")
 slider2_label=customtkinter.CTkLabel(master = main_app_window, text = "m2", font=app_text_font, text_color=app_text_color)
 slider2_label.place(relx=0.02, rely=0.35, anchor="center")
 slider2.set(1000)
 
-slider3=customtkinter.CTkSlider(master = main_app_window, width=160, height=20, from_=1000, to=2000)
+slider3=customtkinter.CTkSlider(master = main_app_window, width=160, height=20, from_=1000, to=2000, fg_color="gray30", button_color="gray1", progress_color="green")
 slider3.place(relx=0.12, rely=0.45, anchor="center")
 slider3_label=customtkinter.CTkLabel(master = main_app_window, text = "m3", font=app_text_font, text_color=app_text_color)
 slider3_label.place(relx=0.02, rely=0.45, anchor="center")
 slider3.set(1000)
 
-slider4=customtkinter.CTkSlider(master = main_app_window, width=160, height=20, from_=1000, to=2000)
+slider4=customtkinter.CTkSlider(master = main_app_window, width=160, height=20, from_=1000, to=2000, fg_color="gray30", button_color="gray1", progress_color="green")
 slider4.place(relx=0.12, rely=0.55, anchor="center")
 slider4_label=customtkinter.CTkLabel(master = main_app_window, text = "m4", font=app_text_font, text_color=app_text_color)
 slider4_label.place(relx=0.02, rely=0.55, anchor="center")
 slider4.set(1000)
 
-slider5=customtkinter.CTkSlider(master = main_app_window, width=160, height=20, from_=1000, to=2000, command=all_sliders_change)
+slider5=customtkinter.CTkSlider(master = main_app_window, width=160, height=20, from_=1000, to=2000, command=all_sliders_change, fg_color="gray30", button_color="gray1", progress_color="green")
 slider5.place(relx=0.12, rely=0.65, anchor="center")
 slider5_label=customtkinter.CTkLabel(master = main_app_window, text = "ms", font=app_text_font, text_color=app_text_color)
 slider5_label.place(relx=0.02, rely=0.65, anchor="center")
 slider5.set(1000)
 
 #PRZYCISKI
-button_startstop=customtkinter.CTkButton(master = main_app_window, width=200, height=50, command=command_start, text = "Start", fg_color='green', text_color=app_text_color, font=app_text_font)
-button_startstop.place(relx=0.10, rely=0.75, anchor="center")
+button_startstop=customtkinter.CTkButton(master = main_app_window, width=200, height=50, command=command_start, text = "Start", fg_color='gray10', text_color=app_text_color, font=app_text_font, border_color='green', border_width=1)
+button_startstop.place(relx=0.3, rely=0.75, anchor="center")
 
-button_reset=customtkinter.CTkButton(master = main_app_window, width=200, height=50, command=command_reset, text = "Reset", text_color=app_text_color, font=app_text_font)
+button_analisys=customtkinter.CTkButton(master = main_app_window, width=200, height=50, command="", text = "Badanie", fg_color='gray10', text_color=app_text_color, font=app_text_font, border_color='gray30', border_width=1)
+button_analisys.place(relx=0.7, rely=0.75, anchor="center")
+
+button_options=customtkinter.CTkButton(master = main_app_window, width=200, height=50, command="", text = "Opcje", fg_color='gray10', text_color=app_text_color, font=app_text_font, border_color='gray30', border_width=1)
+button_options.place(relx=0.9, rely=0.75, anchor="center")
+
+
+button_reset=customtkinter.CTkButton(master = main_app_window, width=200, height=50, command=command_reset, text = "Reset", text_color=app_text_color, font=app_text_font, border_color='gray30', border_width=1)
 button_reset.place(relx=0.10, rely=0.85, anchor="center")
 
-button_save=customtkinter.CTkButton(master = main_app_window, width=200, height=50, command=command_save, text = "Zapisz", text_color=app_text_color, font=app_text_font)
-button_save.place(relx=0.10, rely=0.95, anchor="center")
+button_save=customtkinter.CTkButton(master = main_app_window, width=200, height=50, command=command_save, text = "Zapisz", text_color=app_text_color, font=app_text_font, border_color='gray30', border_width=1)
+button_save.place(relx=0.10, rely=0.75, anchor="center")
 
-button_wifi_arducontrol=customtkinter.CTkButton(master = main_app_window, width=200, height=25, command=command_connect_arduino_control, text = "Połącz ze sterowaniem", fg_color='green', text_color=app_text_color, font=app_text_font)
+button_wifi_arducontrol=customtkinter.CTkButton(master = main_app_window, width=200, height=25, command=command_connect_arduino_control, text = "Połącz ze sterowaniem", fg_color='green', text_color=app_text_color, font=app_text_font,border_color='green', border_width=1)
 button_wifi_arducontrol.place(relx=0.1, rely=0.03, anchor="center")
-button_wifi_ardumeasure=customtkinter.CTkButton(master = main_app_window, width=200, height=25, command=command_connect_arduino_measure, text = "Połącz z systemem pom.", fg_color='green', text_color=app_text_color, font=app_text_font)
+button_wifi_ardumeasure=customtkinter.CTkButton(master = main_app_window, width=200, height=25, command=command_connect_arduino_measure, text = "Połącz z systemem pom.", fg_color='green', text_color=app_text_color, font=app_text_font,border_color='green', border_width=1)
 button_wifi_ardumeasure.place(relx=0.1, rely=0.08, anchor="center")
 
-button_remote_control=customtkinter.CTkButton(master = main_app_window, width=200, height=50, command=command_start_remote_control, text = "Włącz zdalne sterowanie", fg_color='green', text_color=app_text_color, font=app_text_font)
+button_remote_control=customtkinter.CTkButton(master = main_app_window, width=200, height=50, command=command_start_remote_control, text = "Włącz zdalne sterowanie", fg_color='green', text_color=app_text_color, font=app_text_font,border_color='green', border_width=1)
 button_remote_control.place(relx=0.1, rely=0.15, anchor="center")
 
 def command_clear_log_box():
     log_box.delete("1.0", customtkinter.END)
 
-button_clear_log_box=customtkinter.CTkButton(master = main_app_window, width=100, height=25, command=command_clear_log_box, text = "Czyść logi", text_color=app_text_color, font=app_text_font)
-button_clear_log_box.place(relx=0.92, rely=0.78, anchor="center")
+button_clear_log_box=customtkinter.CTkButton(master = main_app_window, width=200, height=50, command=command_clear_log_box, text = "Czyść logi", text_color=app_text_color, font=app_text_font, border_color='gray30', border_width=1)
+button_clear_log_box.place(relx=0.1, rely=0.95, anchor="center")
+
+time_counter = customtkinter.CTkEntry(master=main_app_window, width=200, height=50, text_color=app_text_color, font=("Helvetica", 18), border_color='gray30', border_width=1, fg_color="gray10", justify=customtkinter.CENTER)
+time_counter.insert("1", "00.00 s")
+time_counter.place(relx=0.5, rely=0.75, anchor=customtkinter.CENTER)
+
+
+#0.9 0.75
+
+button_list.append(button_clear_log_box)
+button_list.append(button_startstop)
+button_list.append(button_reset)
+button_list.append(button_save)
+button_list.append(button_wifi_arducontrol)
+button_list.append(button_wifi_ardumeasure)
+button_list.append(button_remote_control)
+
+
+for button in button_list:
+    button.configure(corner_radius=5, fg_color='gray10')
 
 #POLE TEKSTOWE
 def log_box_show_message(message):
     log_box.insert("end", message + "\n")
     log_box.yview(customtkinter.END)
 
-log_box = customtkinter.CTkTextbox(master = main_app_window, width=800, height=100, text_color=app_text_color, font=app_text_font)
+log_box = customtkinter.CTkTextbox(master = main_app_window, width=815, height=110, text_color=app_text_color, font=app_text_font, border_color='gray30', border_width=1, fg_color="gray10")
 log_box.place(relx=0.6, rely=0.9, anchor="center")
 
 #OKNO WYBORU ZAPISU
@@ -242,7 +297,7 @@ def create_question_save_format():
 
 
     save_window =  customtkinter.CTk()
-    save_window.geometry("300x150")
+    save_window.geometry("300x75")
     save_window.title("Zapisywanie")
     save_window.resizable(False, False)
     global windows
@@ -252,10 +307,10 @@ def create_question_save_format():
     main_question.place(relx=0.5, rely=0.2, anchor=customtkinter.CENTER)
     main_question.configure(font=app_text_font, text_color=app_text_color)
 
-    button_excel = customtkinter.CTkButton(master=save_window, text="Excel", command=save_data_to_excel)
+    button_excel = customtkinter.CTkButton(master=save_window, text="Excel", command=save_data_to_excel, corner_radius=5, fg_color='gray10', text_color='white', border_color='green', border_width=1)
     button_excel.place(relx=0.25, rely=0.8, anchor=customtkinter.CENTER)
 
-    button_txt = customtkinter.CTkButton(master=save_window, text="Tekstowy", command=save_data_to_txt)
+    button_txt = customtkinter.CTkButton(master=save_window, text="Txt", command=save_data_to_txt, corner_radius=5, fg_color='gray10', text_color='white', border_color='blue', border_width=1)
     button_txt.place(relx=0.75, rely=0.8, anchor=customtkinter.CENTER)
 
     save_window.bind("<Escape>", lambda event: save_window.destroy())
@@ -267,6 +322,16 @@ def create_question_save_format():
 
     save_window.protocol("WM_DELETE_WINDOW", on_closing_save_window)
     save_window.mainloop()
+
+#CANVAS
+
+from tkinter import PhotoImage
+my_canvas = customtkinter.CTkCanvas(master=main_app_window, width=604, height=400, highlightthickness=0)
+my_canvas.place(relx=0.5, rely=0.35, anchor=customtkinter.CENTER)
+photo = PhotoImage(file="zegary2.png")
+my_canvas.create_image(0, 0, image=photo, anchor=customtkinter.NW)
+
+
 
 #ZAMYKANIE
 def on_closing():
@@ -282,7 +347,7 @@ def on_closing():
             main_app_window.destroy()
     main_app_window.destroy()
 
-print(button_reset.cget('fg_color'))
+print(button_reset.cget('bg_color'))
     
 main_app_window.protocol("WM_DELETE_WINDOW", on_closing)
 main_app_window.mainloop()
