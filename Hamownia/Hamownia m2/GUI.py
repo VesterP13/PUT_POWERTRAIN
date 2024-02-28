@@ -1,4 +1,5 @@
 import customtkinter
+import tkinter
 import threading
 import time
 from tkinter import messagebox
@@ -14,13 +15,16 @@ save_window_status = False
 app_text_font = settings.app_text_font
 app_text_color = settings.app_text_color
 log_box_measuring_timeout = settings.log_box_measuring_timeout
+background_color = "gray14"
 
 #GŁÓWNE OKNO APLIKACJI
-main_app_window = customtkinter.CTk()
+#main_app_window = customtkinter.CTk()
+main_app_window = tkinter.Tk()
 main_app_window.geometry("1024x600")
 main_app_window.title("PUT POWERTRAIN DYNAMOMETER")
 main_app_window.resizable(False, False)
-#main_app_window.overrideredirect(True)
+main_app_window.configure(bg = background_color)
+main_app_window.overrideredirect(True)
 #main_app_window.focus_force()
 
 #WYŚWIETLANIE
@@ -222,28 +226,28 @@ slider5_label.place(relx=0.02, rely=0.65, anchor="center")
 slider5.set(1000)
 
 #PRZYCISKI
-button_startstop=customtkinter.CTkButton(master = main_app_window, width=200, height=50, command=command_start, text = "Start", fg_color='gray10', text_color=app_text_color, font=app_text_font, border_color='green', border_width=1)
+button_startstop=customtkinter.CTkButton(master = main_app_window, width=200, height=50, command=command_start, text = "Start", fg_color='gray10', text_color=app_text_color, font=app_text_font, border_color='green', border_width=1, bg_color=background_color)
 button_startstop.place(relx=0.3, rely=0.75, anchor="center")
 
-button_analisys=customtkinter.CTkButton(master = main_app_window, width=200, height=50, command="", text = "Badanie", fg_color='gray10', text_color=app_text_color, font=app_text_font, border_color='gray30', border_width=1)
+button_analisys=customtkinter.CTkButton(master = main_app_window, width=200, height=50, command="", text = "Badanie", fg_color='gray10', text_color=app_text_color, font=app_text_font, border_color='gray30', border_width=1, bg_color=background_color)
 button_analisys.place(relx=0.7, rely=0.75, anchor="center")
 
-button_options=customtkinter.CTkButton(master = main_app_window, width=200, height=50, command="", text = "Opcje", fg_color='gray10', text_color=app_text_color, font=app_text_font, border_color='gray30', border_width=1)
+button_options=customtkinter.CTkButton(master = main_app_window, width=200, height=50, command="", text = "Opcje", fg_color='gray10', text_color=app_text_color, font=app_text_font, border_color='gray30', border_width=1, bg_color=background_color)
 button_options.place(relx=0.9, rely=0.75, anchor="center")
 
 
-button_reset=customtkinter.CTkButton(master = main_app_window, width=200, height=50, command=command_reset, text = "Reset", text_color=app_text_color, font=app_text_font, border_color='gray30', border_width=1)
+button_reset=customtkinter.CTkButton(master = main_app_window, width=200, height=50, command=command_reset, text = "Reset", text_color=app_text_color, font=app_text_font, border_color='gray30', border_width=1, bg_color=background_color)
 button_reset.place(relx=0.10, rely=0.85, anchor="center")
 
-button_save=customtkinter.CTkButton(master = main_app_window, width=200, height=50, command=command_save, text = "Zapisz", text_color=app_text_color, font=app_text_font, border_color='gray30', border_width=1)
+button_save=customtkinter.CTkButton(master = main_app_window, width=200, height=50, command=command_save, text = "Zapisz", text_color=app_text_color, font=app_text_font, border_color='gray30', border_width=1, bg_color=background_color)
 button_save.place(relx=0.10, rely=0.75, anchor="center")
 
-button_wifi_arducontrol=customtkinter.CTkButton(master = main_app_window, width=200, height=25, command=command_connect_arduino_control, text = "Połącz ze sterowaniem", fg_color='green', text_color=app_text_color, font=app_text_font,border_color='green', border_width=1)
+button_wifi_arducontrol=customtkinter.CTkButton(master = main_app_window, width=200, height=25, command=command_connect_arduino_control, text = "Połącz ze sterowaniem", fg_color='green', text_color=app_text_color, font=app_text_font,border_color='green', border_width=1, bg_color=background_color)
 button_wifi_arducontrol.place(relx=0.1, rely=0.03, anchor="center")
-button_wifi_ardumeasure=customtkinter.CTkButton(master = main_app_window, width=200, height=25, command=command_connect_arduino_measure, text = "Połącz z systemem pom.", fg_color='green', text_color=app_text_color, font=app_text_font,border_color='green', border_width=1)
+button_wifi_ardumeasure=customtkinter.CTkButton(master = main_app_window, width=200, height=25, command=command_connect_arduino_measure, text = "Połącz z systemem pom.", fg_color='green', text_color=app_text_color, font=app_text_font,border_color='green', border_width=1, bg_color=background_color)
 button_wifi_ardumeasure.place(relx=0.1, rely=0.08, anchor="center")
 
-button_remote_control=customtkinter.CTkButton(master = main_app_window, width=200, height=50, command=command_start_remote_control, text = "Włącz zdalne sterowanie", fg_color='green', text_color=app_text_color, font=app_text_font,border_color='green', border_width=1)
+button_remote_control=customtkinter.CTkButton(master = main_app_window, width=200, height=50, command=command_start_remote_control, text = "Włącz zdalne sterowanie", fg_color='green', text_color=app_text_color, font=app_text_font,border_color='green', border_width=1, bg_color=background_color)
 button_remote_control.place(relx=0.1, rely=0.15, anchor="center")
 
 def command_clear_log_box():
@@ -257,7 +261,9 @@ time_counter.insert("1", "00.00 s")
 time_counter.place(relx=0.5, rely=0.75, anchor=customtkinter.CENTER)
 
 
-#0.9 0.75
+
+
+
 
 button_list.append(button_clear_log_box)
 button_list.append(button_startstop)
@@ -331,8 +337,6 @@ my_canvas.place(relx=0.5, rely=0.35, anchor=customtkinter.CENTER)
 photo = PhotoImage(file="zegary2.png")
 my_canvas.create_image(0, 0, image=photo, anchor=customtkinter.NW)
 
-
-
 #ZAMYKANIE
 def on_closing():
     if connection.rpm_1_list:
@@ -347,7 +351,9 @@ def on_closing():
             main_app_window.destroy()
     main_app_window.destroy()
 
-print(button_reset.cget('bg_color'))
+
+button_quit=customtkinter.CTkButton(master = main_app_window, width=50, height=50, command=on_closing, text = "Zamknij", fg_color='gray10', text_color=app_text_color, font=app_text_font,border_color='gray30', border_width=1, bg_color=background_color)
+button_quit.place(relx=0.97, rely=0.05, anchor="center")
     
 main_app_window.protocol("WM_DELETE_WINDOW", on_closing)
 main_app_window.mainloop()
