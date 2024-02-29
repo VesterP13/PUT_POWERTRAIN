@@ -1,0 +1,85 @@
+#include <WiFiS3.h>
+#include <string>
+#include <Servo.h>
+
+const char* ssid = "ISSiN";
+const char* pass = "issinoldlabo";
+WiFiServer server(12345);
+
+int speed_motor1 = 1000, speed_motor2 = 1000, speed_motor3 = 1000, speed_motor4 = 1000;
+
+Servo ESC1;
+Servo ESC2;
+Servo ESC3;
+Servo ESC4;
+
+void setup() {
+  Serial.begin(115200);
+
+  WiFi.begin(ssid, pass);
+  ESC1.attach(5, 1000, 2000);
+  ESC2.attach(6, 1000, 2000);
+  ESC3.attach(9, 1000, 2000);
+  ESC4.attach(11, 1000, 2000);
+
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(1000);
+    Serial.println("Connecting to WiFi...");
+  }
+  Serial.println("Connected to WiFi");
+
+  server.begin();
+}
+
+void loop() {
+  //Serial.println(WiFi.localIP());
+  WiFiClient client = server.available();
+  //Serial.print(speed_motor1);
+  //Serial.print(speed_motor2);
+  //Serial.print(speed_motor3);
+  //Serial.println(speed_motor4);
+  ESC1.writeMicroseconds(1000);
+  ESC1.writeMicroseconds(1000);
+  ESC1.writeMicroseconds(1000);
+  ESC1.writeMicroseconds(1000);
+  //Serial.print("Not connected");
+  if (client) {
+    while (client.connected()) {
+      //Serial.println("polaczono");
+      //Serial.print(speed_motor1);
+      //Serial.print(speed_motor2);
+      //Serial.print(speed_motor3);
+      //Serial.println(speed_motor4);
+      if (client.available()) {
+        String message = client.readStringUntil('#');
+        if (message.substring(0,1) == "1"){
+          speed_motor1 = message.substring(1,5).toInt();
+          ESC1.writeMicroseconds(speed_motor1);
+        }
+        if (message.substring(0,1) == "2"){
+          speed_motor2 = message.substring(1,5).toInt();
+          ESC2.writeMicroseconds(speed_motor2);
+        }
+        if (message.substring(0,1) == "3"){
+          speed_motor3 = message.substring(1,5).toInt();
+          ESC3.writeMicroseconds(speed_motor3);
+        }
+        if (message.substring(0,1) == "4"){
+          speed_motor4 = message.substring(1,5).toInt();
+          ESC4.writeMicroseconds(speed_motor4);
+        }
+        if (message.substring(0,1) == "9"){
+          speed_motor1 = message.substring(1,5).toInt();
+          speed_motor2 = message.substring(1,5).toInt();
+          speed_motor3 = message.substring(1,5).toInt();
+          speed_motor4 = message.substring(1,5).toInt();
+          ESC1.writeMicroseconds(speed_motor1);
+          ESC2.writeMicroseconds(speed_motor2);
+          ESC3.writeMicroseconds(speed_motor3);
+          ESC4.writeMicroseconds(speed_motor4);
+        }
+      }
+    }
+    client.stop();
+  }
+}
