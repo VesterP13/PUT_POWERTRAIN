@@ -5,17 +5,18 @@ import time
 from tkinter import messagebox
 import connection
 import settings
+import math
 
 windows = []
 button_list = []
+
 save_window_status = False
 
-
-#POBRANE USTAWIENIA
+#POBIERANE USTAWIENIA
 app_text_font = settings.app_text_font
 app_text_color = settings.app_text_color
 log_box_measuring_timeout = settings.log_box_measuring_timeout
-background_color = "gray14"
+background_color = settings.background_color
 
 #GŁÓWNE OKNO APLIKACJI
 #main_app_window = customtkinter.CTk()
@@ -24,7 +25,7 @@ main_app_window.geometry("1024x600")
 main_app_window.title("PUT POWERTRAIN DYNAMOMETER")
 main_app_window.resizable(False, False)
 main_app_window.configure(bg = background_color)
-main_app_window.overrideredirect(True)
+#main_app_window.overrideredirect(True)
 #main_app_window.focus_force()
 
 #WYŚWIETLANIE
@@ -65,6 +66,8 @@ def command_start():
     global button_wifi_ardumeasure
     if button_wifi_ardumeasure.cget("border_color") == "red":
         time_counting_thread = threading.Thread(target=time_counting, daemon=True)
+        clocks_display_update_thread = threading.Thread(target=update_clock_display, daemon=True)
+        clocks_display_update_thread.start()
         if not connection.rpm_1_list:
             global start
             start = time.perf_counter()  # Rozpocznij pomiar czasu
@@ -101,7 +104,7 @@ def command_save():
 
 def command_start_remote_control():
     if button_wifi_arducontrol.cget("border_color") == "red":
-        button_remote_control.configure(text="Wyłącz zdalne sterowanie", command=command_stop_remote_control, fg_color='red')
+        button_remote_control.configure(text="Wyłącz zdalne sterowanie", command=command_stop_remote_control, border_color='red')
         slider1.configure(command = motor1_control)
         slider2.configure(command = motor2_control)
         slider3.configure(command = motor3_control)
@@ -225,6 +228,10 @@ slider5_label=customtkinter.CTkLabel(master = main_app_window, text = "ms", font
 slider5_label.place(relx=0.02, rely=0.65, anchor="center")
 slider5.set(1000)
 
+#STEROWANIE SLIDERAMI STRZAŁKAMI
+main_app_window.bind("<Left>", lambda event: slider5.set(slider5.get()-100))
+main_app_window.bind("<Right>", lambda event: slider5.set(slider5.get()+100))
+
 #PRZYCISKI
 button_startstop=customtkinter.CTkButton(master = main_app_window, width=200, height=50, command=command_start, text = "Start", fg_color='gray10', text_color=app_text_color, font=app_text_font, border_color='green', border_width=1, bg_color=background_color)
 button_startstop.place(relx=0.3, rely=0.75, anchor="center")
@@ -232,9 +239,8 @@ button_startstop.place(relx=0.3, rely=0.75, anchor="center")
 button_analisys=customtkinter.CTkButton(master = main_app_window, width=200, height=50, command="", text = "Badanie", fg_color='gray10', text_color=app_text_color, font=app_text_font, border_color='gray30', border_width=1, bg_color=background_color)
 button_analisys.place(relx=0.7, rely=0.75, anchor="center")
 
-button_options=customtkinter.CTkButton(master = main_app_window, width=200, height=50, command="", text = "Opcje", fg_color='gray10', text_color=app_text_color, font=app_text_font, border_color='gray30', border_width=1, bg_color=background_color)
+button_options=customtkinter.CTkButton(master = main_app_window, width=200, height=50, command=settings.create_settings_window, text = "Opcje", fg_color='gray10', text_color=app_text_color, font=app_text_font, border_color='gray30', border_width=1, bg_color=background_color)
 button_options.place(relx=0.9, rely=0.75, anchor="center")
-
 
 button_reset=customtkinter.CTkButton(master = main_app_window, width=200, height=50, command=command_reset, text = "Reset", text_color=app_text_color, font=app_text_font, border_color='gray30', border_width=1, bg_color=background_color)
 button_reset.place(relx=0.10, rely=0.85, anchor="center")
@@ -260,11 +266,6 @@ time_counter = customtkinter.CTkEntry(master=main_app_window, width=200, height=
 time_counter.insert("1", "00.00 s")
 time_counter.place(relx=0.5, rely=0.75, anchor=customtkinter.CENTER)
 
-
-
-
-
-
 button_list.append(button_clear_log_box)
 button_list.append(button_startstop)
 button_list.append(button_reset)
@@ -272,7 +273,6 @@ button_list.append(button_save)
 button_list.append(button_wifi_arducontrol)
 button_list.append(button_wifi_ardumeasure)
 button_list.append(button_remote_control)
-
 
 for button in button_list:
     button.configure(corner_radius=5, fg_color='gray10')
@@ -300,7 +300,6 @@ def create_question_save_format():
     def save_data_to_txt():
         connection.save_data_to_txt()
         on_closing_save_window()
-
 
     save_window =  customtkinter.CTk()
     save_window.geometry("300x75")
@@ -337,6 +336,100 @@ my_canvas.place(relx=0.5, rely=0.35, anchor=customtkinter.CENTER)
 photo = PhotoImage(file="zegary2.png")
 my_canvas.create_image(0, 0, image=photo, anchor=customtkinter.NW)
 
+#Rysowanie wskazówek zegara
+
+def update_clock_display():
+    while True:
+        wstaw_wskaźniki()
+        time.sleep(0.01)
+        global is_measuring_running
+        if is_measuring_running == False:
+            break
+
+def obliczanie_wierzchołka(x1, y1, h, angle):
+    x = h * 2 * math.sin(math.radians(angle/2))
+    deltax = x * math.sin(math.radians(angle/2))
+    deltay = x * math.cos(math.radians(angle/2))
+    x2 = x1 - h + deltax
+    y2 = y1 - deltay
+    return x1, y1, x2, y2
+
+def obliczanie_wierzchołków(x1, y1, h, angle):
+    angle = angle + 90
+    h = h/2
+    x = h * 2 * math.sin(math.radians(angle/2))
+    deltax = x * math.sin(math.radians(angle/2))
+    deltay = x * math.cos(math.radians(angle/2))
+    x2 = x1 - h + deltax
+    y2 = y1 - deltay
+    x1 = x1 + h - deltax
+    y1 = y1 + deltay
+    return x1, y1, x2, y2
+
+def tworzenie_strzałki1(x0, y0, h, angle):
+    x1, y1, x2, y2 = obliczanie_wierzchołka(x0, y0, h, angle)
+    x3, y3, x4, y4 = obliczanie_wierzchołków(x0, y0, h/6, angle)
+    arrow1 = my_canvas.create_polygon(x2, y2, x3, y3, x4, y4, fill="red")
+
+def tworzenie_strzałki2(x0, y0, h, angle):
+    x1, y1, x2, y2 = obliczanie_wierzchołka(x0, y0, h, angle)
+    x3, y3, x4, y4 = obliczanie_wierzchołków(x0, y0, h/6, angle)
+    arrow2 = my_canvas.create_polygon(x2, y2, x3, y3, x4, y4, fill="red")
+
+def tworzenie_strzałki3(x0, y0, h, angle):
+    x1, y1, x2, y2 = obliczanie_wierzchołka(x0, y0, h, angle)
+    x3, y3, x4, y4 = obliczanie_wierzchołków(x0, y0, h/6, angle)
+    arrow3 = my_canvas.create_polygon(x2, y2, x3, y3, x4, y4, fill="red")
+
+def tworzenie_strzałki4(x0, y0, h, angle):
+    x1, y1, x2, y2 = obliczanie_wierzchołka(x0, y0, h, angle)
+    x3, y3, x4, y4 = obliczanie_wierzchołków(x0, y0, h/6, angle)
+    arrow4 = my_canvas.create_polygon(x2, y2, x3, y3, x4, y4, fill="red")
+
+def obliczanie_kąta(rpm1, rpm2, rpm3, rpm4):
+    max_rpm = settings.max_rpm_on_display
+    min_rpm = 0
+    max_angle = 210
+    min_angle = -30
+
+    angle_range = max_angle - min_angle
+    rpm_range = max_rpm - min_rpm
+    
+    angle1 = min_angle + (rpm1 - min_rpm) * angle_range / rpm_range
+    angle2 = max_angle - (rpm2 - min_rpm) * angle_range / rpm_range
+    angle3 = max_angle - (rpm3 - min_rpm) * angle_range / rpm_range
+    angle4 = min_angle + (rpm4 - min_rpm) * angle_range / rpm_range
+
+    return angle1, angle2, angle3, angle4
+
+def wstaw_wskaźniki():
+    #USTAWIENIA WSTĘPNE
+    x1, y1 = 95, 93
+    x2, y2 = 512, 93
+    x3, y3 = 95, 305
+    x4, y4 = 512, 305
+    h = 60
+
+    if connection.rpm_1_list:
+        angle1, angle2, angle3, angle4 = obliczanie_kąta(connection.rpm_1_list[-1], connection.rpm_2_list[-1], connection.rpm_3_list[-1], connection.rpm_4_list[-1])
+    else: angle1, angle2, angle3, angle4 = obliczanie_kąta(0, 0, 0, 0)
+
+    try:
+        global arrow1, arrow2, arrow3, arrow4
+        my_canvas.delete(arrow1)
+        my_canvas.delete(arrow2)
+        my_canvas.delete(arrow3)
+        my_canvas.delete(arrow4)
+    except:
+        pass
+
+    tworzenie_strzałki1(x1, y1, h, angle1)
+    tworzenie_strzałki2(x2, y2, h, angle2)
+    tworzenie_strzałki3(x3, y3, h, angle3)
+    tworzenie_strzałki4(x4, y4, h, angle4)
+
+wstaw_wskaźniki()
+
 #ZAMYKANIE
 def on_closing():
     if connection.rpm_1_list:
@@ -347,10 +440,8 @@ def on_closing():
                     window.destroy()
                 except:
                     pass
-
             main_app_window.destroy()
     main_app_window.destroy()
-
 
 button_quit=customtkinter.CTkButton(master = main_app_window, width=50, height=50, command=on_closing, text = "Zamknij", fg_color='gray10', text_color=app_text_color, font=app_text_font,border_color='gray30', border_width=1, bg_color=background_color)
 button_quit.place(relx=0.97, rely=0.05, anchor="center")

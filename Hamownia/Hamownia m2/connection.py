@@ -5,6 +5,7 @@ import pandas as pd
 import datetime
 import os
 
+#POBIERANE USTAWIENIA
 TCP_CONTROL_IP=settings.TCP_CONTROL_IP
 TCP_CONTROL_PORT=settings.TCP_CONTROL_PORT
 TCP_MEASURE_IP=settings.TCP_MEASURE_IP
@@ -20,6 +21,7 @@ current_list = []
 voltage_list = []
 arduino_data_list = []
 time_list = []
+
 measurement_running = False
 
 #ŁĄCZENIE
