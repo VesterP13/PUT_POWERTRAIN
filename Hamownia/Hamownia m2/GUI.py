@@ -262,7 +262,7 @@ def command_clear_log_box():
 button_clear_log_box=customtkinter.CTkButton(master = main_app_window, width=200, height=50, command=command_clear_log_box, text = "Czyść logi", text_color=app_text_color, font=app_text_font, border_color='gray30', border_width=1)
 button_clear_log_box.place(relx=0.1, rely=0.95, anchor="center")
 
-time_counter = customtkinter.CTkEntry(master=main_app_window, width=200, height=50, text_color=app_text_color, font=("Helvetica", 18), border_color='gray30', border_width=1, fg_color="gray10", justify=customtkinter.CENTER)
+time_counter = customtkinter.CTkEntry(master=main_app_window, width=200, height=50, text_color=app_text_color, font=("Helvetica", 14), border_color='gray30', border_width=1, fg_color="gray10", justify=customtkinter.CENTER)
 time_counter.insert("1", "00.00 s")
 time_counter.place(relx=0.5, rely=0.75, anchor=customtkinter.CENTER)
 
@@ -369,22 +369,22 @@ def obliczanie_wierzchołków(x1, y1, h, angle):
 def tworzenie_strzałki1(x0, y0, h, angle):
     x1, y1, x2, y2 = obliczanie_wierzchołka(x0, y0, h, angle)
     x3, y3, x4, y4 = obliczanie_wierzchołków(x0, y0, h/6, angle)
-    arrow1 = my_canvas.create_polygon(x2, y2, x3, y3, x4, y4, fill="red")
+    arrow1 = my_canvas.create_polygon(x2, y2, x3, y3, x4, y4, fill="#EF0000")
 
 def tworzenie_strzałki2(x0, y0, h, angle):
     x1, y1, x2, y2 = obliczanie_wierzchołka(x0, y0, h, angle)
     x3, y3, x4, y4 = obliczanie_wierzchołków(x0, y0, h/6, angle)
-    arrow2 = my_canvas.create_polygon(x2, y2, x3, y3, x4, y4, fill="red")
+    arrow2 = my_canvas.create_polygon(x2, y2, x3, y3, x4, y4, fill="#EF0000")
 
 def tworzenie_strzałki3(x0, y0, h, angle):
     x1, y1, x2, y2 = obliczanie_wierzchołka(x0, y0, h, angle)
     x3, y3, x4, y4 = obliczanie_wierzchołków(x0, y0, h/6, angle)
-    arrow3 = my_canvas.create_polygon(x2, y2, x3, y3, x4, y4, fill="red")
+    arrow3 = my_canvas.create_polygon(x2, y2, x3, y3, x4, y4, fill="#EF0000")
 
 def tworzenie_strzałki4(x0, y0, h, angle):
     x1, y1, x2, y2 = obliczanie_wierzchołka(x0, y0, h, angle)
     x3, y3, x4, y4 = obliczanie_wierzchołków(x0, y0, h/6, angle)
-    arrow4 = my_canvas.create_polygon(x2, y2, x3, y3, x4, y4, fill="red")
+    arrow4 = my_canvas.create_polygon(x2, y2, x3, y3, x4, y4, fill="#EF0000")
 
 def obliczanie_kąta(rpm1, rpm2, rpm3, rpm4):
     max_rpm = settings.max_rpm_on_display
@@ -427,7 +427,32 @@ def wstaw_wskaźniki():
     tworzenie_strzałki2(x2, y2, h, angle2)
     tworzenie_strzałki3(x3, y3, h, angle3)
     tworzenie_strzałki4(x4, y4, h, angle4)
+    
+def battery_display():
+    canvas_width = my_canvas.cget("width")
+    canvas_heigth = my_canvas.cget("height")
+    canvas_middle_x = int(canvas_width) / 2
+    canvas_middle_y = -75+int(canvas_heigth) / 2
+    
+    battery_cell_height = 25
+    battery_cell_width = 75
 
+    x1 = canvas_middle_x-(battery_cell_width/2)
+    y1 = canvas_middle_y+(battery_cell_height/2)
+    x2 = canvas_middle_x+(battery_cell_width/2)
+    y2 = canvas_middle_y-(battery_cell_height/2)
+    
+    first_battery_cell = my_canvas.create_rectangle(x1, y1, x2, y2, fill="green")
+    second_battery_cell = my_canvas.create_rectangle(x1, y1-25, x2, y2-25, fill="green")
+    third_battery_cell = my_canvas.create_rectangle(x1, y1-50, x2, y2-50, fill="green")
+    fourth_battery_cell = my_canvas.create_rectangle(x1, y1-75, x2, y2-75, fill="green")
+
+
+def update_baterry_display(value):
+    if value >= 75:
+        battery_display()
+        
+update_baterry_display(100)
 wstaw_wskaźniki()
 
 #ZAMYKANIE
@@ -448,4 +473,3 @@ button_quit.place(relx=0.97, rely=0.05, anchor="center")
     
 main_app_window.protocol("WM_DELETE_WINDOW", on_closing)
 main_app_window.mainloop()
-
