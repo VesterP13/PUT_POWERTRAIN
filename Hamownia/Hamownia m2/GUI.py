@@ -331,10 +331,27 @@ def create_question_save_format():
 #CANVAS
 
 from tkinter import PhotoImage
-my_canvas = customtkinter.CTkCanvas(master=main_app_window, width=604, height=400, highlightthickness=0)
-my_canvas.place(relx=0.5, rely=0.35, anchor=customtkinter.CENTER)
-photo = PhotoImage(file="zegary2.png")
+my_canvas = customtkinter.CTkCanvas(master=main_app_window, width=718, height=397, highlightthickness=0)
+my_canvas.place(relx=0.55, rely=0.35, anchor=customtkinter.CENTER)
+photo = PhotoImage(file="zegary4.png")
 my_canvas.create_image(0, 0, image=photo, anchor=customtkinter.NW)
+
+my_canvas.create_text(254, 85, text="m1", font=app_text_font, fill="white")
+my_canvas.create_text(472, 85, text="m2", font=app_text_font, fill="white")
+my_canvas.create_text(254, 304, text="m3", font=app_text_font, fill="white")
+my_canvas.create_text(472, 304, text="m4", font=app_text_font, fill="white")
+
+my_canvas.create_text(97, 98+68, text="m1", font=("Helvetica", 8), fill="white")
+my_canvas.create_text(622, 98+68, text="m2", font=("Helvetica", 8), fill="white")
+my_canvas.create_text(97, 302+68, text="m3", font=("Helvetica", 8), fill="white")
+my_canvas.create_text(622, 302+68, text="m4", font=("Helvetica", 8), fill="white")
+
+my_canvas.create_text(97, 98+50, text="rpm", font=("Helvetica", 11), fill="white")
+my_canvas.create_text(622, 98+50, text="rpm", font=("Helvetica", 11), fill="white")
+my_canvas.create_text(97, 302+50, text="rpm", font=("Helvetica", 11), fill="white")
+my_canvas.create_text(622, 302+50, text="rpm", font=("Helvetica", 11), fill="white")
+
+
 
 #Rysowanie wskazówek zegara
 
@@ -369,22 +386,22 @@ def obliczanie_wierzchołków(x1, y1, h, angle):
 def tworzenie_strzałki1(x0, y0, h, angle):
     x1, y1, x2, y2 = obliczanie_wierzchołka(x0, y0, h, angle)
     x3, y3, x4, y4 = obliczanie_wierzchołków(x0, y0, h/6, angle)
-    arrow1 = my_canvas.create_polygon(x2, y2, x3, y3, x4, y4, fill="#EF0000")
+    arrow1 = my_canvas.create_polygon(x2, y2, x3, y3, x4, y4, fill="#be0000")
 
 def tworzenie_strzałki2(x0, y0, h, angle):
     x1, y1, x2, y2 = obliczanie_wierzchołka(x0, y0, h, angle)
     x3, y3, x4, y4 = obliczanie_wierzchołków(x0, y0, h/6, angle)
-    arrow2 = my_canvas.create_polygon(x2, y2, x3, y3, x4, y4, fill="#EF0000")
+    arrow2 = my_canvas.create_polygon(x2, y2, x3, y3, x4, y4, fill="#be0000")
 
 def tworzenie_strzałki3(x0, y0, h, angle):
     x1, y1, x2, y2 = obliczanie_wierzchołka(x0, y0, h, angle)
     x3, y3, x4, y4 = obliczanie_wierzchołków(x0, y0, h/6, angle)
-    arrow3 = my_canvas.create_polygon(x2, y2, x3, y3, x4, y4, fill="#EF0000")
+    arrow3 = my_canvas.create_polygon(x2, y2, x3, y3, x4, y4, fill="#be0000")
 
 def tworzenie_strzałki4(x0, y0, h, angle):
     x1, y1, x2, y2 = obliczanie_wierzchołka(x0, y0, h, angle)
     x3, y3, x4, y4 = obliczanie_wierzchołków(x0, y0, h/6, angle)
-    arrow4 = my_canvas.create_polygon(x2, y2, x3, y3, x4, y4, fill="#EF0000")
+    arrow4 = my_canvas.create_polygon(x2, y2, x3, y3, x4, y4, fill="#be0000")
 
 def obliczanie_kąta(rpm1, rpm2, rpm3, rpm4):
     max_rpm = settings.max_rpm_on_display
@@ -404,14 +421,14 @@ def obliczanie_kąta(rpm1, rpm2, rpm3, rpm4):
 
 def wstaw_wskaźniki():
     #USTAWIENIA WSTĘPNE
-    x1, y1 = 95, 93
-    x2, y2 = 512, 93
-    x3, y3 = 95, 305
-    x4, y4 = 512, 305
+    x1, y1 = 97, 98
+    x2, y2 = 622, 98
+    x3, y3 = 97, 302
+    x4, y4 = 622, 302
     h = 60
 
     if connection.rpm_1_list:
-        angle1, angle2, angle3, angle4 = obliczanie_kąta(connection.rpm_1_list[-1], connection.rpm_2_list[-1], connection.rpm_3_list[-1], connection.rpm_4_list[-1])
+        angle1, angle2, angle3, angle4 = obliczanie_kąta(int(connection.rpm_1_list[-1]), int(connection.rpm_2_list[-1]), int(connection.rpm_3_list[-1]), int(connection.rpm_4_list[-1]))
     else: angle1, angle2, angle3, angle4 = obliczanie_kąta(0, 0, 0, 0)
 
     try:
@@ -428,29 +445,56 @@ def wstaw_wskaźniki():
     tworzenie_strzałki3(x3, y3, h, angle3)
     tworzenie_strzałki4(x4, y4, h, angle4)
     
-def battery_display():
-    canvas_width = my_canvas.cget("width")
-    canvas_heigth = my_canvas.cget("height")
-    canvas_middle_x = int(canvas_width) / 2
-    canvas_middle_y = -75+int(canvas_heigth) / 2
+canvas_width = my_canvas.cget("width")
+canvas_heigth = my_canvas.cget("height")
+canvas_middle_x = 5+int(canvas_width) / 2
+canvas_middle_y = 8+int(canvas_heigth) / 2
     
-    battery_cell_height = 25
-    battery_cell_width = 75
-
+def battery_display(number_of_cells):
+    
+    battery_cell_height = 12
+    battery_cell_width = 38
+    
+    global canvas_middle_x
+    global canvas_middle_y
     x1 = canvas_middle_x-(battery_cell_width/2)
     y1 = canvas_middle_y+(battery_cell_height/2)
     x2 = canvas_middle_x+(battery_cell_width/2)
     y2 = canvas_middle_y-(battery_cell_height/2)
     
-    first_battery_cell = my_canvas.create_rectangle(x1, y1, x2, y2, fill="green")
-    second_battery_cell = my_canvas.create_rectangle(x1, y1-25, x2, y2-25, fill="green")
-    third_battery_cell = my_canvas.create_rectangle(x1, y1-50, x2, y2-50, fill="green")
-    fourth_battery_cell = my_canvas.create_rectangle(x1, y1-75, x2, y2-75, fill="green")
+    try:
+        my_canvas.delete(first_battery_cell)
+        my_canvas.delete(second_battery_cell)
+        my_canvas.delete(third_battery_cell)
+        my_canvas.delete(fourth_battery_cell)
+    except:
+        pass
 
+    if number_of_cells == 4:
+        first_battery_cell = my_canvas.create_rectangle(x1, y1, x2, y2, fill="#10a910")
+        second_battery_cell = my_canvas.create_rectangle(x1, y1-12, x2, y2-12, fill="#10a910")
+        third_battery_cell = my_canvas.create_rectangle(x1, y1-24, x2, y2-24, fill="#10a910")
+        fourth_battery_cell = my_canvas.create_rectangle(x1, y1-36, x2, y2-36, fill="#10a910")
+    elif number_of_cells == 3:
+        first_battery_cell = my_canvas.create_rectangle(x1, y1, x2, y2, fill="#10a910")
+        second_battery_cell = my_canvas.create_rectangle(x1, y1-12, x2, y2-12, fill="#10a910")
+        third_battery_cell = my_canvas.create_rectangle(x1, y1-24, x2, y2-24, fill="#10a910")
+    elif number_of_cells == 2:
+        first_battery_cell = my_canvas.create_rectangle(x1, y1, x2, y2, fill="#10a910")
+        second_battery_cell = my_canvas.create_rectangle(x1, y1-12, x2, y2-12, fill="#10a910")
+    elif number_of_cells == 1:
+        first_battery_cell = my_canvas.create_rectangle(x1, y1, x2, y2, fill="#10a910")
 
 def update_baterry_display(value):
     if value >= 75:
-        battery_display()
+        battery_display(4)
+    if value >= 50 and value < 75:
+        battery_display(3)
+    if value < 50 and value >= 25:
+        battery_display(2)
+    if value < 25:
+        battery_display(1)
+    label_battery_soc = my_canvas.create_text(canvas_middle_x, canvas_middle_y+20, text=str(value)+"%", fill="white", font=app_text_font)
         
 update_baterry_display(100)
 wstaw_wskaźniki()
@@ -468,8 +512,27 @@ def on_closing():
             main_app_window.destroy()
     main_app_window.destroy()
 
-button_quit=customtkinter.CTkButton(master = main_app_window, width=50, height=50, command=on_closing, text = "Zamknij", fg_color='gray10', text_color=app_text_color, font=app_text_font,border_color='gray30', border_width=1, bg_color=background_color)
-button_quit.place(relx=0.97, rely=0.05, anchor="center")
+button_quit=customtkinter.CTkButton(master = main_app_window, width=80, height=50, command=on_closing, text = "Zamknij", fg_color='gray10', text_color=app_text_color, font=app_text_font,border_color='gray30', border_width=1, bg_color=background_color)
+button_quit.place(relx=0.96, rely=0.05, anchor="center")
+
+button_minimize=customtkinter.CTkButton(master = main_app_window, width=80, height=50, command=lambda: main_app_window.iconify(), text = "Minimalizuj", fg_color='gray10', text_color=app_text_color, font=app_text_font,border_color='gray30', border_width=1, bg_color=background_color)
+button_minimize.place(relx=0.96, rely=0.14, anchor="center")
+
+
+fullscreen = False
+
+def window_override():
+    global fullscreen
+    if fullscreen:
+        main_app_window.overrideredirect(False)
+        fullscreen = False
+    else:
+        main_app_window.overrideredirect(True)
+        fullscreen = True
+        
+
+button_override=customtkinter.CTkButton(master = main_app_window, width=80, height=50, command=window_override, text = "Tryb okna", fg_color='gray10', text_color=app_text_color, font=app_text_font,border_color='gray30', border_width=1, bg_color=background_color)
+button_override.place(relx=0.96, rely=0.23, anchor="center")
     
 main_app_window.protocol("WM_DELETE_WINDOW", on_closing)
 main_app_window.mainloop()

@@ -22,6 +22,8 @@ voltage_list = []
 arduino_data_list = []
 time_list = []
 
+
+
 measurement_running = False
 
 #ŁĄCZENIE

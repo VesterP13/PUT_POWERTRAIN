@@ -2,7 +2,7 @@ import tkinter
 
 #USTAWIENIA MOTYWU
 
-app_text_font = ("Helvetica", 12)   #DOMYŚLNIE ("Helvetica", 12)
+app_text_font = ("Helvetica", 13)   #DOMYŚLNIE ("Helvetica", 12)
 
 app_text_color = "white"            #DOMYŚLNIE "white"
 
