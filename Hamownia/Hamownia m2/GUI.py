@@ -166,6 +166,11 @@ def command_disconnect_arduino_measure():
     is_arduino_measure_connected(False)
     log_box_show_message("Rozłączono ze systemem pomiarowym.")
 
+def command_powertrain(event):
+    import webbrowser
+    url = 'https://power.put.poznan.pl/'
+    webbrowser.open(url)
+
 #STEROWANIE
 def motor1_control(value):
     threading.Thread(target=connection.motor1_control(value))
@@ -256,6 +261,9 @@ button_wifi_ardumeasure.place(relx=0.1, rely=0.08, anchor="center")
 button_remote_control=customtkinter.CTkButton(master = main_app_window, width=200, height=50, command=command_start_remote_control, text = "Włącz zdalne sterowanie", fg_color='green', text_color=app_text_color, font=app_text_font,border_color='green', border_width=1, bg_color=background_color)
 button_remote_control.place(relx=0.1, rely=0.15, anchor="center")
 
+button_powertrain=customtkinter.CTkButton(master = main_app_window, width=200, height=50, command=command_powertrain, text = "PUT POWERTRAIN", fg_color='green', text_color=app_text_color, font=app_text_font,border_color='green', border_width=1, bg_color=background_color)
+button_powertrain.place(relx=0.5, rely=0.1, anchor="center")
+
 def command_clear_log_box():
     log_box.delete("1.0", customtkinter.END)
 
@@ -336,6 +344,9 @@ my_canvas.place(relx=0.55, rely=0.35, anchor=customtkinter.CENTER)
 photo = PhotoImage(file="zegary4.png")
 my_canvas.create_image(0, 0, image=photo, anchor=customtkinter.NW)
 
+canvas_width = my_canvas.cget("width")
+canvas_heigth = my_canvas.cget("height")
+
 my_canvas.create_text(254, 85, text="m1", font=app_text_font, fill="white")
 my_canvas.create_text(472, 85, text="m2", font=app_text_font, fill="white")
 my_canvas.create_text(254, 304, text="m3", font=app_text_font, fill="white")
@@ -351,7 +362,16 @@ my_canvas.create_text(622, 98+50, text="rpm", font=("Helvetica", 11), fill="whit
 my_canvas.create_text(97, 302+50, text="rpm", font=("Helvetica", 11), fill="white")
 my_canvas.create_text(622, 302+50, text="rpm", font=("Helvetica", 11), fill="white")
 
+powertrain_link = my_canvas.create_text((int(canvas_width)/2), (int(canvas_heigth)-390), text="PUT POWERTRAIN", font=("Helvetica", 14), fill="#006288", tags=("PUT POWERTRAIN",))
+my_canvas.tag_bind(powertrain_link, "<Button-1>", command_powertrain)
 
+def command_powertrain_enter(event):
+    my_canvas.itemconfig(powertrain_link, fill="#004288")
+def command_powertrain_leave(event):
+    my_canvas.itemconfig(powertrain_link, fill="#006288")
+
+my_canvas.tag_bind(powertrain_link, "<Enter>", command_powertrain_enter)
+my_canvas.tag_bind(powertrain_link, "<Leave>", command_powertrain_leave)
 
 #Rysowanie wskazówek zegara
 
@@ -445,8 +465,7 @@ def wstaw_wskaźniki():
     tworzenie_strzałki3(x3, y3, h, angle3)
     tworzenie_strzałki4(x4, y4, h, angle4)
     
-canvas_width = my_canvas.cget("width")
-canvas_heigth = my_canvas.cget("height")
+
 canvas_middle_x = 5+int(canvas_width) / 2
 canvas_middle_y = 8+int(canvas_heigth) / 2
     
