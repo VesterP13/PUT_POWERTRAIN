@@ -12,6 +12,10 @@ button_list = []
 
 save_window_status = False
 
+import os
+os.environ['DISPLAY'] = ':0'
+
+
 #POBIERANE USTAWIENIA
 app_text_font = settings.app_text_font
 app_text_color = settings.app_text_color
