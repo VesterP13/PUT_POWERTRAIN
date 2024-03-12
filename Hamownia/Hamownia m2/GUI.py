@@ -190,6 +190,7 @@ def motor4_control(value):
 
 def motors_control(value):
     threading.Thread(target=connection.motors_control(value))
+    all_sliders_change(value)
     log_box_show_message("Ustawiono wszystkie motory na: " + motor_percentage(value))
 
 def motor_percentage(value):
