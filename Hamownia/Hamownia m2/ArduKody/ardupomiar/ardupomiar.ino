@@ -24,9 +24,13 @@ volatile int rpm1interrupts; //ILOSC PRZERWAN
 volatile int rpm2interrupts;
 volatile int rpm3interrupts;
 volatile int rpm4interrupts;
+int voltage, current;
 int rpm1, rpm2, rpm3, rpm4;
+int tempAmbient, tempBattery;
 int loopcount = 0;
-int loopDelay = 100;
+
+int loopDelay = 100; //co jaki czas uruchamia się pętla pomiaru
+int RpmCountingStep = 5; //co którą iterację pętli liczone są rpm'y
 
 OneWire oneWire(TEMPERATURE_AMBIENT_PIN);
 DallasTemperature sensors(&oneWire);
@@ -80,27 +84,14 @@ void rpm_fun4()
 
 void SendToApp(WiFiClient client, int rpm1count, int rpm2count, int rpm3count, int rpm4count, float tempA, float tempB, int voltage, int current)
 {
-  client.print("*");
-  client.print(rpm1count);
-  client.print(";");
-  client.print(rpm2count);
-  client.print(";");
-  client.print(rpm3count);
-  client.print(";");
-  client.print(rpm4count);
-  client.print(";");
-  client.print(tempA);
-  client.print(";");
-  client.print(tempB);
-  client.print(";");
-  client.print(voltage);
-  client.print(";");
-  client.print(current);
-  client.println("#");
+  char buffer[10000]; // Utwórz bufor o odpowiednim rozmiarze
+  sprintf(buffer, "*%d;%d;%d;%d;%.2f;%.2f;%d;%d#", rpm1count, rpm2count, rpm3count, rpm4count, tempA, tempB, voltage, current);
+  client.print(buffer);
 }
 
 void PrintOnSerial(int rpm1count, int rpm2count, int rpm3count, int rpm4count, float tempA, float tempB, int voltage, int current)
 {
+  /*
   Serial.print("*");
   Serial.print(rpm1count);
   Serial.print(";");
@@ -118,6 +109,7 @@ void PrintOnSerial(int rpm1count, int rpm2count, int rpm3count, int rpm4count, f
   Serial.print(";");
   Serial.print(current);
   Serial.println("#");
+  */
 }
 
 
@@ -134,17 +126,19 @@ void loop()
       //sensors.requestTemperatures();
       //float temp_ambient = sensors.getTempCByIndex(0);
 
-    if (loopcount > 4)
+    if (loopcount == RpmCountingStep)
       {
         loopcount = 0;
-        rpm1 = (rpm1interrupts/(5*loopDelay)) * 60000;
-        SendToApp(client, rpm1,1000,1000,1000,20,40,30,70);
-        PrintOnSerial(rpm1,1000,1000,1000,20,40,30,70);
+        rpm1 = (rpm1interrupts/(RpmCountingStep*loopDelay)) * 60000;
+        SendToApp(client, rpm1,rpm2,rpm3,rpm4,tempAmbient,tempBattery,voltage,current);
+        //SendToApp(client, 100,100,100,100,100,100,100,100);
+        //PrintOnSerial(rpm1,rpm2,rpm3,rpm4,tempAmbient,tempBattery,voltage,current);
       }
     else
       {
-        SendToApp(client, 1000,1000,1000,1000,20,40,30,70);
-        PrintOnSerial(1000,1000,1000,1000,20,40,30,70);
+        SendToApp(client, rpm1,rpm2,rpm3,rpm4,tempAmbient,tempBattery,voltage,current);
+        //SendToApp(client, 100,100,100,100,100,100,100,100);
+        //PrintOnSerial(rpm1,rpm2,rpm3,rpm4,tempAmbient,tempBattery,voltage,current);
       }
     loopcount++;
     }
