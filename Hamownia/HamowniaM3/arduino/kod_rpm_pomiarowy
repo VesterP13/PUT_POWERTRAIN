@@ -1,0 +1,97 @@
+#include <WiFiS3.h>
+#include <string>
+
+//WIFI
+const char* ssid = "TP-Link_33DD";
+const char* pass = "03215111";
+WiFiServer server(12345);
+
+//#define SENSOR_PIN A0 // Pin, do którego podłączony jest czujnik
+//#define IR_SENSOR1 1
+#define IR_SENSOR2 2
+#define IR_SENSOR3 3 // Pin, do którego podłączony jest czujnik
+//#define IR_SENSOR4 4
+
+unsigned long prevTime = 0; // Variable to store the previous time
+volatile unsigned long count2 = 0;
+volatile unsigned long count3 = 0;
+
+void setup() {
+  Serial.begin(115200);  //pinMode(SENSOR_PIN, INPUT);  // Ustawienie pinu czujnika jako wejście
+  WiFi.begin(ssid, pass);
+
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(5000);
+    Serial.println("Connecting to WiFi...");
+  }
+  Serial.println("Connected to WiFi");
+
+  server.begin();
+
+  //pinMode(IR_SENSOR, INPUT);
+  attachInterrupt(digitalPinToInterrupt(IR_SENSOR2), rpm_fun2, FALLING);
+  attachInterrupt(digitalPinToInterrupt(IR_SENSOR3), rpm_fun3, FALLING);
+}
+
+void SendToApp(WiFiClient client, int rpm1, int rpm2, int rpm3, int rpm4, float tempA, float tempB, int voltage, int current)
+{
+  char buffer[10000]; // Utwórz bufor o odpowiednim rozmiarze
+  sprintf(buffer, "*%d;%d;%d;%d;%.2f;%.2f;%d;%d#", rpm1, rpm2, rpm3, rpm4, tempA, tempB, voltage, current);
+  client.print(buffer);
+}
+
+/*void rpm_fun1() {
+  noInterrupts();
+  count = count + 1;
+  interrupts();
+}*/
+void rpm_fun2() {
+  noInterrupts();
+  count2 = count2 + 1;
+  interrupts();
+}
+void rpm_fun3() {
+  noInterrupts();
+  count3 = count3 + 1;
+  interrupts();
+}
+/*void rpm_fun4() {
+  noInterrupts();
+  count = count + 1;
+  interrupts();
+}*/
+
+
+
+
+void loop() {
+   WiFiClient client = server.available();
+  if (client) {
+    while (client.connected()) 
+    {
+      unsigned long currentTime = millis();
+      unsigned long elapsedTime = currentTime - prevTime;
+      if (elapsedTime >= 1000) { // Update RPM every 1 second
+        float rpm2 = (count2) * (60000.0 / elapsedTime); // Calculate RPM
+        float rpm3 = (count3) * (60000.0 / elapsedTime); // Calculate RPM
+        Serial.print("rpm2: ");
+        Serial.print(rpm2); // Print RPM
+        Serial.print("  rpm3:");
+        Serial.println(rpm3); // Print RPM
+        count2 = 0; // Reset count
+        count3 = 0;
+        prevTime = currentTime; // Update previous time
+        SendToApp(client, 1000, int(rpm2) , int(rpm3), 1000, 10,10,10,10);
+
+  }
+    }}
+
+
+ 
+  //int sensorValue = analogRead(SENSOR_PIN);  // Odczytanie wartości z czujnika
+  //float temp = ((sensorValue * 5.0 / 1024.0) * 100.0);
+  //Serial.println(temp);
+  //Serial.println(count);
+  //int sensorValue = digitalRead(IR_SENSOR);  // Odczytanie wartości z czujnika
+  //Serial.println(sensorValue);
+}
