@@ -1,7 +1,5 @@
-// Wiktor Preuss 2024
-// for PUT POWERTRAIN
-// Alpha bulid
-
+// Author: Wiktor Preuss 2024
+// graphic speedometer
 #include "SpeedMeter.h"
 #include <QPainter>
 #include <QPaintEvent>
@@ -9,47 +7,58 @@
 #include <QPropertyAnimation>
 #include <QLabel>
 
-
 SpeedMeter::SpeedMeter(QWidget *parent)    : QWidget{parent}
 {
-    setFixedSize(250,250);
+    setFixedSize(parent->width()/4, parent->width()/4);
     graphicCalculating();
 
+    labelSetup(label_font, label_font_static);
+
+
+    //setCurrentArcLength(0);    // value in %
+    //setRpmArcLength(0);        // value in %
+    //simulation(10, 100);       //(Value step, Time Step)
+}
+
+void SpeedMeter::labelSetup(QFont label_font, QFont label_font_static){
+    rpm_labelSetup(label_font, label_font_static);
+    current_labelSetup(label_font, label_font_static);
+}
+
+void SpeedMeter::rpm_labelSetup(QFont label_font, QFont label_font_static){
     LabelRPM = new QLabel(this);
     LabelRPM_static = new QLabel(this);
 
-    QFont font("LCD", 22);
-    QFont font_static("LCD", 14);
-
-    LabelRPM->setText("30 000");
-    LabelRPM->setFont(font);
+    LabelRPM->setText("00000");
+    LabelRPM->setFont(label_font);
     LabelRPM->move(width()/2-width()/6, height() * 55/100);
 
     LabelRPM_static->setText("rpm");
-    LabelRPM_static->setFont(font_static);
+    LabelRPM_static->setFont(label_font_static);
     LabelRPM_static->move(0, height() * 63/100);
+}
 
-
+void SpeedMeter::current_labelSetup(QFont label_font, QFont label_font_static){
     LabelCURRENT = new QLabel(this);
     LabelCURRENT_static = new QLabel(this);
 
     LabelCURRENT->setText("10");
-    LabelCURRENT->setFont(font);
+    LabelCURRENT->setFont(label_font);
     LabelCURRENT->move(width()/2-width()/6, height() * 65/100);
 
     LabelCURRENT_static->setText("A");
-    LabelCURRENT_static->setFont(font_static);
+    LabelCURRENT_static->setFont(label_font_static);
     LabelCURRENT_static->move(40, height() * 63/100);
 }
 
-void SpeedMeter::simulation(int value){
+void SpeedMeter::simulation(int value, int timeStep){
     criclingStep = value;
     ptimer = new QTimer();
-    ptimer->start(500);
-    QObject::connect(ptimer, &QTimer::timeout, this, &SpeedMeter::increaseByTen);
+    ptimer->start(timeStep);
+    QObject::connect(ptimer, &QTimer::timeout, this, &SpeedMeter::increaseValues);
 }
 
-void SpeedMeter::increaseByTen(){
+void SpeedMeter::increaseValues(){
     if (x>=100){
         x = x - 100;
         cricling = cricling + criclingStep*16;
@@ -77,9 +86,21 @@ void SpeedMeter::graphicCalculating(){
     whiteArcHeight = arcHeight-(2*sizeDiff);
     rectangle2.setRect(arcX+sizeDiff, arcY+sizeDiff, whiteArcWidth, whiteArcHeight);
 
+    animation = new QPropertyAnimation(this, "i");
+    animation->setDuration(animationDuration);
+    animation->setEasingCurve(QEasingCurve::Linear);
+    connect(animation, &QPropertyAnimation::valueChanged, this, &SpeedMeter::onAnimationValueChanged1);
+
+    animation2 = new QPropertyAnimation(this, "z");
+    animation2->setDuration(animationDuration);
+    animation2->setEasingCurve(QEasingCurve::Linear);
+    connect(animation2, &QPropertyAnimation::valueChanged, this, &SpeedMeter::onAnimationValueChanged2);
 }
 
-
+void SpeedMeter::update(int rpmValue, int currentValue) {
+    setRpmArcLength(rpmValue);
+    setCurrentArcLength(currentValue);
+}
 void SpeedMeter::paintEvent(QPaintEvent *event)
 {
 
@@ -163,13 +184,12 @@ void SpeedMeter::paintEvent(QPaintEvent *event)
         }
 
     }
-
     //CIRCLE
     sizeDiff = 40;
     QRectF rectangle4(arcX+sizeDiff, arcY+sizeDiff, arcWidth-(2*sizeDiff), arcHeight-(2*sizeDiff));
     QLinearGradient gradient3(rectangle1.topLeft(), rectangle1.topRight());
-    gradient2.setColorAt(0, QColorConstants::Svg::blue);
-    gradient2.setColorAt(0.4, QColorConstants::Svg::darkblue);
+    gradient2.setColorAt(0, QColorConstants::Svg::white);
+    gradient2.setColorAt(0.4, QColorConstants::Svg::white);
     painter.setPen(QPen(gradient2, 10));
     painter.drawArc(rectangle4, cricling, 140*16);
     painter.setPen(QPen(gradient2, 10));
@@ -186,58 +206,59 @@ void SpeedMeter::onAnimationValueChanged2(const QVariant &value) {
     repaint();
 }
 
-void SpeedMeter::setRpmArcLength(double percentage) {
-
-    if (percentage > 100){
+void SpeedMeter::setRpmArcLength(double percentage)
+{
+    if (percentage > 100) {
         percentage = 100;
     }
 
-    double newArcLength = static_cast<double>(percentage / 100.0 * 133.0 * 16 * -1);
+    double newArcLength1 = static_cast<double>(percentage / 100.0 * maxArcLength);
 
-    //TUTAJ ZMIANA WYSWIETLANEGO RPM
-    this->LabelRPM->setText(QString::number(x*212));
+    if (newArcLength1 != i) {
+        int newRpm = static_cast<int>(percentage);
+        if (newRpm != currentRpm) {
+            currentRpm = newRpm;
+            LabelRPM->setText(QString::number(currentRpm));
+        }
 
-    if (!animation) {
-        animation = new QPropertyAnimation(this, "i");
-        animation->setDuration(animationDuration); // Czas trwania animacji w milisekundach
-        animation->setEasingCurve(QEasingCurve::Linear); // Ustawienie równomiernego przebiegu animacji
-        connect(animation, &QPropertyAnimation::valueChanged, this, &SpeedMeter::onAnimationValueChanged1);
+        if (!(animation->state() == QAbstractAnimation::Running)) {
+            int startValue = i;
+            int endValue = newArcLength1;
+
+            animation->setStartValue(startValue);
+            animation->setEndValue(endValue);
+            animation->start();
+        }
     }
-
-    int startValue = i;
-    int endValue = newArcLength;
-
-    animation->setStartValue(startValue);
-    animation->setEndValue(endValue);
-    animation->start();
-
 }
 
-void SpeedMeter::setCurrentArcLength(double percentage) {
-
-    if (percentage > 100){
+void SpeedMeter::setCurrentArcLength(double percentage)
+{
+    if (percentage > 100)
+    {
         percentage = 100;
     }
 
-    double newArcLength = static_cast<double>(percentage / 100.0 * 69.0 * 16 * -1);
+    double newArcLength = static_cast<double>(percentage / 100.0 * maxCurrentArcLength);
 
-    //TUTAJ ZMIANA WYSWIETLANEGO RPM
-    this->LabelCURRENT->setText(QString::number(x/7));
+    if (newArcLength != z)
+    {
+        int newCurrent = static_cast<int>(percentage);
+        if (newCurrent != currentCurrent)
+        {
+            currentCurrent = newCurrent;
+            LabelCURRENT->setText(QString::number(currentCurrent));
+        }
 
-    if (!animation2) {
-        animation2 = new QPropertyAnimation(this, "z");
-        animation2->setDuration(this->animationDuration);
-        animation2->setEasingCurve(QEasingCurve::Linear);
-        connect(animation2, &QPropertyAnimation::valueChanged, this, &SpeedMeter::onAnimationValueChanged2);
+        if (!(animation2->state() == QAbstractAnimation::Running))
+        {
+            int startValue = z;
+            int endValue = newArcLength;
+
+            animation2->setStartValue(startValue);
+            animation2->setEndValue(endValue);
+            animation2->start();
+        }
     }
-
-    int startValue = z; // Aktualna wartość długości łuku
-    int endValue = newArcLength; // Nowa wartość długości łuku
-
-    animation2->setStartValue(startValue);
-    animation2->setEndValue(endValue);
-    animation2->start();
-
 }
-
 
