@@ -1,3 +1,7 @@
+// Wiktor Preuss 2024
+// for PUT POWERTRAIN
+// Alpha bulid
+
 #include "SpeedMeter.h"
 #include <QPainter>
 #include <QPaintEvent>
