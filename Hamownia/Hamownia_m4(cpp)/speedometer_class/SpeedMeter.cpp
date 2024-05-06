@@ -1,6 +1,7 @@
 // Author: Wiktor Preuss 2024
 // graphic speedometer
 #include "SpeedMeter.h"
+//#include "qmainwindow.h"
 #include <QPainter>
 #include <QPaintEvent>
 #include <QTimer>
@@ -11,13 +12,11 @@ SpeedMeter::SpeedMeter(QWidget *parent)    : QWidget{parent}
 {
     setFixedSize(parent->width()/4, parent->width()/4);
     graphicCalculating();
-
     labelSetup(label_font, label_font_static);
-
-
+    parentPalette = parent->palette();
     //setCurrentArcLength(0);    // value in %
     //setRpmArcLength(0);        // value in %
-    //simulation(10, 100);       //(Value step, Time Step)
+    //simulation(10, 200);       //(Value step, Time Step)
 }
 
 void SpeedMeter::labelSetup(QFont label_font, QFont label_font_static){
@@ -52,7 +51,9 @@ void SpeedMeter::current_labelSetup(QFont label_font, QFont label_font_static){
 }
 
 void SpeedMeter::simulation(int value, int timeStep){
+    if (value < 0) value = - value;
     criclingStep = value;
+    stepValue = value;
     ptimer = new QTimer();
     ptimer->start(timeStep);
     QObject::connect(ptimer, &QTimer::timeout, this, &SpeedMeter::increaseValues);
@@ -63,7 +64,7 @@ void SpeedMeter::increaseValues(){
         x = x - 100;
         cricling = cricling + criclingStep*16;
     }
-    else x = x + 1;
+    else x = x + stepValue;
     cricling = cricling + criclingStep*16;
     this->setRpmArcLength(x);
     this->setCurrentArcLength(x*2/3);
@@ -101,6 +102,7 @@ void SpeedMeter::update(int rpmValue, int currentValue) {
     setRpmArcLength(rpmValue);
     setCurrentArcLength(currentValue);
 }
+
 void SpeedMeter::paintEvent(QPaintEvent *event)
 {
 
@@ -108,42 +110,22 @@ void SpeedMeter::paintEvent(QPaintEvent *event)
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
 
-    //RPM ARC
-    //QRectF rectangle1(arcX, arcY, arcWidth, arcHeight);
     QLinearGradient gradient1(rectangle1.topLeft(), rectangle1.topRight());
     gradient1.setColorAt(0, QColorConstants::Svg::orange);
     gradient1.setColorAt(0.4, QColorConstants::Svg::red);
     painter.setPen(QPen(gradient1, 20));
-    painter.drawArc(rectangle1, 177*16, i);
+    painter.drawArc(rectangle1, 175*16, i);
 
-    //CURRENT ARC
-    //int sizeDiff = 20;
-    //QRectF rectangle3(arcX+sizeDiff, arcY+sizeDiff, arcWidth-(2*sizeDiff), arcHeight-(2*sizeDiff));
     QLinearGradient gradient2(rectangle1.topLeft(), rectangle1.topRight());
     gradient2.setColorAt(0, QColorConstants::Svg::blue);
     gradient2.setColorAt(0.4, QColorConstants::Svg::darkblue);
     painter.setPen(QPen(gradient2, 15));
     painter.drawArc(rectangle3, 175.5*16, z);
 
-    //WHITE ARC + CUTTING ARCS
-    //QColor backgroundColor = palette().color(QPalette::Window);
-    //QColor backgroundColor = QColorConstants::Svg::red;
-    //sizeDiff = 10;
-    //int whiteArcWidth = arcWidth-(2*sizeDiff);
-    //int whiteArcHeight = arcHeight-(2*sizeDiff);
-    //QRectF rectangle2(arcX+sizeDiff, arcY+sizeDiff, whiteArcWidth, whiteArcHeight);
-
-    QColor backgroundColor = palette().color(QPalette::Base);
-    painter.setPen(QPen(backgroundColor, 10));
-    QPointF startPoint1 = rectangle2.center() + QPointF(200, 5.5);
-    QPointF endPoint1 = rectangle2.center() + QPointF(-200, 5.5);
-    painter.drawLine(startPoint1, endPoint1);
-
     painter.setPen(QPen(Qt::white, 2));
     int whiteArcAngle = - 140;
     painter.drawArc(rectangle2, 240*16, -200*16);
 
-    // METRICS
     painter.setPen(QPen(Qt::white, 2));
     int numLines = 20;
     int angleStep = whiteArcAngle / numLines;
@@ -168,6 +150,7 @@ void SpeedMeter::paintEvent(QPaintEvent *event)
     numLines = 20;
     angleStep = whiteArcAngle * 2/3 / numLines;
     startAngle = 180;
+
     for (int i = 0; i <= numLines; ++i)
     {
         if (i % 5 ==0){
@@ -184,7 +167,6 @@ void SpeedMeter::paintEvent(QPaintEvent *event)
         }
 
     }
-    //CIRCLE
     sizeDiff = 40;
     QRectF rectangle4(arcX+sizeDiff, arcY+sizeDiff, arcWidth-(2*sizeDiff), arcHeight-(2*sizeDiff));
     QLinearGradient gradient3(rectangle1.topLeft(), rectangle1.topRight());

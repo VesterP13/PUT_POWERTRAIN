@@ -34,6 +34,7 @@ private:
     QTimer *ptimer;
     QPropertyAnimation *animation = nullptr;
     QPropertyAnimation *animation2 = nullptr;
+    QPalette parentPalette;
     QLabel *LabelRPM;
     QLabel *LabelRPM_static;
     QLabel *LabelCURRENT;
@@ -41,8 +42,8 @@ private:
     QRectF rectangle1;
     QRectF rectangle2;
     QRectF rectangle3;
-    double maxArcLength = 133.0 * 16 * -1;
-    double maxCurrentArcLength = 69.0 * 16 * -1;
+    int animationDuration = 200;
+    int stepValue;
     int currentRpm;
     int currentCurrent;
     int cricling;
@@ -53,12 +54,12 @@ private:
     int sizeDiff;
     int whiteArcWidth;
     int whiteArcHeight;
-    int animationDuration = 100;
     int x = 0;
     int criclingStep = 0;
     double i = 0;
     double z = 0;
-
+    double maxArcLength = 129.5 * 16 * -1;
+    double maxCurrentArcLength = 69.0 * 16 * -1;
 signals:
 };
 
