@@ -35,7 +35,7 @@
        </font>
       </property>
       <property name="currentIndex">
-       <number>0</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="tab">
        <attribute name="title">
@@ -196,7 +196,7 @@
            <enum>QTabWidget::West</enum>
           </property>
           <property name="currentIndex">
-           <number>0</number>
+           <number>1</number>
           </property>
           <widget class="QWidget" name="tab_5">
            <attribute name="title">
@@ -458,7 +458,7 @@
                  </property>
                  <layout class="QGridLayout" name="gridLayout_20">
                   <item row="0" column="0">
-                   <widget class="QTextBrowser" name="textBrowser_battery_temperature_2">
+                   <widget class="QTextBrowser" name="textBrowser_console">
                     <property name="verticalScrollBarPolicy">
                      <enum>Qt::ScrollBarAlwaysOff</enum>
                     </property>
